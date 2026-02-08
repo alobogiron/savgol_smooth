@@ -45,7 +45,7 @@ static inline int adjust_window(int L, int window) {
 }
 
 bool sg_savgol_smooth_nearest(
-    const int32_t* x,
+    const float* x,
     float* y,
     size_t L,
     int window,
@@ -56,39 +56,30 @@ bool sg_savgol_smooth_nearest(
     window = adjust_window((int)L, window);
     if (window < 3 || window > 21 || (window & 1) == 0) return false;
 
-    // mapeia para as duas tabelas (só smoothing)
     if (polyorder < 2) polyorder = 2;
     if (polyorder > 5) polyorder = 5;
 
-    // window muito pequena não suporta ordem alta; cai pra P23
     if (window < 4) polyorder = 2;
 
-    // para encontrar qual linha da tabela de coeficientes vai utilizar
-    const int row = (window - 3) / 2; // 3->0 ... 21->9
+    const int row = (window - 3) / 2;
     const int32_t* c = (polyorder <= 3) ? SG_P23_3_21[row] : SG_P45_3_21[row];
 
     const int M = window / 2;
     const int last = (int)L - 1;
-    const int32_t denom = c[0];
+    const float denom = (float)c[0];
 
     for (int n = 0; n < (int)L; n++) {
-        // centro: c[1+M]
-	// trabalha n=0 sendo o centro pois é simétrico
-        int64_t acc = (int64_t)c[1 + M] * (int64_t)x[n];
+        float acc = (float)c[1 + M] * x[n];
 
-        // vizinhos (simetria): c[1+(M-k)] = coef de |k|
-	// itera sobre a vizinhança
         for (int k = 1; k <= M; k++) {
-            const int32_t hk = c[1 + (M - k)];
+            const float hk = (float)c[1 + (M - k)];
             const int im = clampi(n - k, 0, last);
             const int ip = clampi(n + k, 0, last);
-            acc += (int64_t)hk * ((int64_t)x[im] + (int64_t)x[ip]);
+            acc += hk * (x[im] + x[ip]);
         }
-	
-	// normalização dos vetores
-        y[n] = (float)acc / (float)denom;
+
+        y[n] = acc / denom;
     }
 
     return true;
 }
-
