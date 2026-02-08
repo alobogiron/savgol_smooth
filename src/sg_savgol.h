@@ -10,7 +10,7 @@
 // - polyorder: 2/3 usa tabela P23; 4/5 usa tabela P45
 // Retorna false se parâmetros inválidos.
 bool sg_savgol_smooth_nearest(
-    const int32_t* x,
+    const float* x,
     float* y,
     size_t L,
     int window,
